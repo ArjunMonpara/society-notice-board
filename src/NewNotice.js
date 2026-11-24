@@ -5,9 +5,11 @@ import axios from "axios";
 function NewNotice({ onAddNotice }) {
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
+  const [message, setMessage] = useState("");
 
   const handleSubmit = async (event) => {
     event.preventDefault();
+    setMessage("");
 
     try {
       const response = await axios.post(
@@ -23,8 +25,15 @@ function NewNotice({ onAddNotice }) {
 
       setTitle("");
       setBody("");
+      setMessage(`Notice posted, id ${response.data.id}`);
     } catch (error) {
-      console.error("Error posting notice:", error);
+      if (error.response) {
+        setMessage(
+          `Server problem (code ${error.response.status})`
+        );
+      } else {
+        setMessage("No internet connection");
+      }
     }
   };
 
@@ -35,6 +44,7 @@ function NewNotice({ onAddNotice }) {
       <form onSubmit={handleSubmit}>
         <div>
           <label>Title: </label>
+
           <input
             type="text"
             value={title}
@@ -48,6 +58,7 @@ function NewNotice({ onAddNotice }) {
 
         <div>
           <label>Body: </label>
+
           <textarea
             value={body}
             onChange={(event) => setBody(event.target.value)}
@@ -60,6 +71,16 @@ function NewNotice({ onAddNotice }) {
 
         <button type="submit">Post Notice</button>
       </form>
+
+      {message && (
+        <p
+          style={{
+            color: message.startsWith("Notice posted") ? "green" : "red"
+          }}
+        >
+          {message}
+        </p>
+      )}
     </div>
   );
 }

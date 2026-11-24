@@ -10,17 +10,21 @@ function App() {
   const [notices, setNotices] = useState([]);
   const [block, setBlock] = useState("1");
   const [loading, setLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [retryCount, setRetryCount] = useState(0);
   const [message, setMessage] = useState("");
 
   useEffect(() => {
     const fetchNotices = async () => {
       setLoading(true);
+      setErrorMessage("");
 
       try {
         const response = await axios.get(
-          "https://jsonplaceholder.typicode.com/posts?_limit=8",
+          "https://jsonplaceholder.typicode.com/posts",
           {
             params: {
+              _limit: 8,
               userId: block
             }
           }
@@ -28,14 +32,20 @@ function App() {
 
         setNotices(response.data);
       } catch (error) {
-        console.error("Error fetching notices:", error);
+        if (error.response) {
+          setErrorMessage(
+            `Server problem (code ${error.response.status})`
+          );
+        } else {
+          setErrorMessage("No internet connection");
+        }
       } finally {
         setLoading(false);
       }
     };
 
     fetchNotices();
-  }, [block]);
+  }, [block, retryCount]);
 
   const handleAddNotice = (newNotice) => {
     setNotices((prevNotices) => [
@@ -44,6 +54,10 @@ function App() {
     ]);
 
     setMessage(`Notice posted, id ${newNotice.id}`);
+  };
+
+  const handleRetry = () => {
+    setRetryCount((prevCount) => prevCount + 1);
   };
 
   return (
@@ -72,10 +86,27 @@ function App() {
 
       <h3>Showing {notices.length} notices</h3>
 
-      {message && <p style={{ color: "green" }}>{message}</p>}
+      {message && (
+        <p style={{ color: "green" }}>{message}</p>
+      )}
 
       {loading ? (
         <p>Loading notices...</p>
+      ) : errorMessage ? (
+        <div
+          style={{
+            color: "red",
+            border: "1px solid red",
+            padding: "10px",
+            marginTop: "15px"
+          }}
+        >
+          <p>{errorMessage}</p>
+
+          <button onClick={handleRetry}>
+            Try again
+          </button>
+        </div>
       ) : (
         <NoticeList notices={notices} />
       )}
